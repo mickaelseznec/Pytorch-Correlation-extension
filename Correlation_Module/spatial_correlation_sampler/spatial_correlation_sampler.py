@@ -1,3 +1,5 @@
+import torch
+
 from torch import nn
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
@@ -5,6 +7,26 @@ from torch.nn.modules.utils import _pair
 
 import spatial_correlation_sampler_backend as correlation
 
+def register_onnx_ops():
+    def convolution_sampler_ops(g, input1, input2,
+                                kH, kW, patchH, patchW,
+                                padH, padW, dilationH,
+                                dilationW,
+                                dilation_patchH,
+                                dilation_patchW,
+                                dH,
+                                dW):
+        return g.op("thales::correlation_layer",
+                    input1, input2,
+                    kH, kW, patchH, patchW,
+                    padH, padW, dilationH, dilationW,
+                    dilation_patchH, dilation_patchW,
+                    dH, dW)
+
+    from torch.onnx import register_custom_op_symbolic
+    register_custom_op_symbolic("correlation_sampler::forward", convolution_sampler_ops, 1)
+
+register_onnx_ops()
 
 def spatial_correlation_sample(input1,
                                input2,
@@ -37,9 +59,18 @@ def spatial_correlation_sample(input1,
         Tensor: Result of correlation sampling
 
     """
-    return SpatialCorrelationSamplerFunction.apply(input1, input2,
-                                                   kernel_size, patch_size,
-                                                   stride, padding, dilation, dilation_patch)
+    kH, kW = _pair(kernel_size)
+    patchH, patchW = _pair(patch_size)
+    padH, padW = _pair(padding)
+    dilationH, dilationW = _pair(dilation)
+    dilation_patchH, dilation_patchW = _pair(dilation_patch)
+    dH, dW = _pair(stride)
+    return torch.ops.correlation_sampler.forward(
+        input1, input2,
+        kH, kW, patchH, patchW,
+        padH, padW, dilationH, dilationW,
+        dilation_patchH, dilation_patchW,
+        dH, dW)
 
 
 class SpatialCorrelationSamplerFunction(Function):

@@ -1,4 +1,5 @@
 #include <torch/extension.h>
+#include <torch/script.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <vector>
 #include <iostream>
@@ -59,12 +60,12 @@ std::vector<torch::Tensor> correlation_cuda_backward(
 torch::Tensor correlation_sample_forward(
     torch::Tensor input1,
     torch::Tensor input2,
-    int kH, int kW,
-    int patchH, int patchW,
-    int padH, int padW,
-    int dilationH, int dilationW,
-    int dilation_patchH, int dilation_patchW,
-    int dH, int dW) {
+    int64_t kH, int64_t kW,
+    int64_t patchH, int64_t patchW,
+    int64_t padH, int64_t padW,
+    int64_t dilationH, int64_t dilationW,
+    int64_t dilation_patchH, int64_t dilation_patchW,
+    int64_t dH, int64_t dW) {
   if (input1.device().is_cuda()){
     CHECK_INPUT(input1);
     CHECK_INPUT(input2);
@@ -90,12 +91,12 @@ std::vector<torch::Tensor> correlation_sample_backward(
     torch::Tensor input1,
     torch::Tensor input2,
     torch::Tensor grad_output,
-    int kH, int kW,
-    int patchH, int patchW,
-    int padH, int padW,
-    int dilationH, int dilationW,
-    int dilation_patchH, int dilation_patchW,
-    int dH, int dW) {
+    int64_t kH, int64_t kW,
+    int64_t patchH, int64_t patchW,
+    int64_t padH, int64_t padW,
+    int64_t dilationH, int64_t dilationW,
+    int64_t dilation_patchH, int64_t dilation_patchW,
+    int64_t dH, int64_t dW) {
 
   if(grad_output.device().is_cuda()){
     CHECK_INPUT(input1);
@@ -127,6 +128,12 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("forward", &correlation_sample_forward, "Spatial Correlation Sampler Forward");
   m.def("backward", &correlation_sample_backward, "Spatial Correlation Sampler backward");
 }
+
+TORCH_LIBRARY(correlation_sampler, m) {
+  m.def("forward", correlation_sample_forward);
+  m.def("backward", correlation_sample_backward);
+}
+
 
 #else
 
