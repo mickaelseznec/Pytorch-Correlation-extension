@@ -18,13 +18,21 @@ def register_onnx_ops():
                                 dW):
         return g.op("thales::correlation_layer",
                     input1, input2,
-                    kH, kW, patchH, patchW,
-                    padH, padW, dilationH, dilationW,
-                    dilation_patchH, dilation_patchW,
-                    dH, dW)
+                    kH_i=kH.node()['value'].item(),
+                    kW_i=kW.node()['value'].item(),
+                    patchH_i=patchH.node()['value'].item(),
+                    patchW_i=patchW.node()['value'].item(),
+                    padH_i=padH.node()['value'].item(),
+                    padW_i=padW.node()['value'].item(),
+                    dilationH_i=dilationH.node()['value'].item(),
+                    dilationW_i=dilationW.node()['value'].item(),
+                    dilation_patchH_i=dilation_patchH.node()['value'].item(),
+                    dilation_patchW_i=dilation_patchW.node()['value'].item(),
+                    dH_i=dH.node()['value'].item(),
+                    dW_i=dW.node()['value'].item())
 
     from torch.onnx import register_custom_op_symbolic
-    register_custom_op_symbolic("correlation_sampler::forward", convolution_sampler_ops, 1)
+    register_custom_op_symbolic("correlation_sampler::correlation_forward", convolution_sampler_ops, 1)
 
 register_onnx_ops()
 
@@ -65,7 +73,7 @@ def spatial_correlation_sample(input1,
     dilationH, dilationW = _pair(dilation)
     dilation_patchH, dilation_patchW = _pair(dilation_patch)
     dH, dW = _pair(stride)
-    return torch.ops.correlation_sampler.forward(
+    return torch.ops.correlation_sampler.correlation_forward(
         input1, input2,
         kH, kW, patchH, patchW,
         padH, padW, dilationH, dilationW,

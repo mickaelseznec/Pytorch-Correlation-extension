@@ -130,8 +130,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 }
 
 TORCH_LIBRARY(correlation_sampler, m) {
-  m.def("forward", correlation_sample_forward);
-  m.def("backward", correlation_sample_backward);
+  m.def("correlation_forward", correlation_sample_forward);
 }
 
 
